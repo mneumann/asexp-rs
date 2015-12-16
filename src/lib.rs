@@ -1,5 +1,7 @@
 #![feature(str_char)]
 
+use std::char;
+
 #[derive(Debug, PartialEq)]
 enum Atom {
     // Unquoted string
@@ -52,6 +54,8 @@ impl Atom {
 
 #[derive(Debug, PartialEq)]
 enum Token<'a> {
+    Error,
+
     Str(&'a str),
     QStr(&'a str),
 
@@ -66,12 +70,26 @@ enum Token<'a> {
     Float(&'a str),
 }
 
-const WHITESPACE: &'static [char] = &[' ', '\r', '\n', '\t'];
-const TOKEN_DELIM: &'static [char] = &[' ', '\r', '\n', '\t', '(', ')', '[', ']', '{', '}', '"'];
+#[inline]
+fn scan<F: Fn(char) -> bool>(s: &str, cond: F) -> (&str, &str) {
+    // split at the first non-"cond" character
+    match s.find(|c: char| !cond(c)) {
+        None => (s, ""),
+        Some(pos) => s.split_at(pos),
+    }
+}
+
+
+#[inline]
+fn is_token_delim(c: char) -> bool {
+    c.is_whitespace() || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' ||
+    c == '"'
+}
 
 fn skip_ws(s: &str) -> &str {
-    s.trim_left_matches(WHITESPACE)
+    scan(s, char::is_whitespace).1
 }
+
 
 // ; comment
 fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
@@ -102,39 +120,23 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                 '0'...'9' => {
                     // Int, Float
 
-                    match s.find(|c: char| !c.is_numeric()) {
-                        Some(pos) => {
-                            let (a, b) = s.split_at(pos);
-                            match b.slice_shift_char() {
-                                Some(('.', s2)) => {
-                                    // integer continues
-                                    match s2.find(|c: char| !c.is_numeric()) {
-                                        None => Some((Token::Float(s), "")),
-                                        Some(pos2) => {
-                                            let (a, b) = s.split_at(pos + pos2 + 1);
-                                            Some((Token::Float(a), b))
-                                        }
-                                    }
-                                }
-                                _ => Some((Token::Int(a), b)),
-                            }
+                    let (basis, rest) = scan(s, char::is_numeric);
+                    match rest.slice_shift_char() {
+                        Some(('.', mantisse)) => {
+                            // integer followed by "." => float
+                            let (mantisse, _) = scan(mantisse, char::is_numeric);
+                            let (full_float, rest) = s.split_at(basis.len() + 1 + mantisse.len());
+
+                            Some((Token::Float(full_float), rest))
                         }
-                        None => Some((Token::Int(s), "")),
+                        _ => Some((Token::Int(basis), rest)),
                     }
                 }
 
                 _ => {
                     // Str
-                    match s.find(TOKEN_DELIM) {
-                        Some(pos) => {
-                            let (a, b) = s.split_at(pos);
-                            Some((Token::Str(a), b))
-                        }
-                        None => {
-                            // complete string
-                            Some((Token::Str(s), ""))
-                        }
-                    }
+                    let (string, rest) = scan(s, |c| !is_token_delim(c));
+                    Some((Token::Str(string), rest))
                 }
             }
         }
