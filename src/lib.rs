@@ -55,6 +55,7 @@ impl Atom {
 #[derive(Debug, PartialEq)]
 enum Token<'a> {
     Error,
+    Whitespace(&'a str),
 
     Str(&'a str),
     QStr(&'a str),
@@ -86,14 +87,8 @@ fn is_token_delim(c: char) -> bool {
     c == '"'
 }
 
-fn skip_ws(s: &str) -> &str {
-    scan(s, char::is_whitespace).1
-}
-
-
 // ; comment
 fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
-    let s = skip_ws(s);
     match s.slice_shift_char() {
         None => None,
         Some((c, s2)) => {
@@ -133,6 +128,11 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                     }
                 }
 
+                c if char::is_whitespace(c) => {
+                    let (ws, rest) = scan(s, char::is_whitespace);
+                    Some((Token::Whitespace(ws), rest))
+                }
+
                 _ => {
                     // Str
                     let (string, rest) = scan(s, |c| !is_token_delim(c));
@@ -145,7 +145,7 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
 
 #[test]
 fn test_tokenize() {
-    assert_eq!(Some((Token::Str("abc"), "")), next_token("  abc"));
+    assert_eq!(Some((Token::Whitespace("  "), "abc")), next_token("  abc"));
     assert_eq!(Some((Token::Str("abc"), "")), next_token("abc"));
     assert_eq!(Some((Token::Str("abc"), "(")), next_token("abc("));
 
