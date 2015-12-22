@@ -33,7 +33,7 @@ fn is_token_delim(c: char) -> bool {
     c == '"'
 }
 
-// ; comment
+// TODO ; comment
 fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
     match s.slice_shift_char() {
         None => None,
@@ -89,8 +89,67 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
     }
 }
 
+pub struct Tokenizer<'a> {
+    current: &'a str,
+    ignore_ws: bool,
+}
+
+impl<'a> Tokenizer<'a> {
+    fn new(s: &'a str, ignore_ws: bool) -> Tokenizer<'a> {
+        Tokenizer {
+            current: s,
+            ignore_ws: ignore_ws,
+        }
+    }
+}
+
+impl<'a> Iterator for Tokenizer<'a> {
+    type Item = Token<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match next_token(self.current) {
+                Some((tok, rest)) => {
+                    self.current = rest;
+                    if self.ignore_ws {
+                        if let Token::Whitespace(_) = tok {
+                            continue;
+                        }
+                    }
+                    return Some(tok);
+                }
+                None => {
+                    return None;
+                }
+            }
+        }
+    }
+}
+
+
 #[test]
-fn test_tokenize() {
+fn test_tokenizer_whitespace() {
+    let t = Tokenizer::new(" (abc 123)", false);
+    let tokens: Vec<_> = t.into_iter().collect();
+    assert_eq!(vec![Token::Whitespace(" "),
+                    Token::OpenBrace,
+                    Token::Str("abc"),
+                    Token::Whitespace(" "),
+                    Token::Int("123"),
+                    Token::CloseBrace],
+               tokens);
+}
+
+#[test]
+fn test_tokenizer_no_whitespace() {
+    let t = Tokenizer::new(" (abc 123)", true);
+    let tokens: Vec<_> = t.into_iter().collect();
+    assert_eq!(vec![Token::OpenBrace, Token::Str("abc"), Token::Int("123"), Token::CloseBrace],
+               tokens);
+}
+
+#[test]
+fn test_token() {
     assert_eq!(Some((Token::Whitespace("  "), "abc")), next_token("  abc"));
     assert_eq!(Some((Token::Str("abc"), "")), next_token("abc"));
     assert_eq!(Some((Token::Str("abc"), "(")), next_token("abc("));

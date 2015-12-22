@@ -14,8 +14,7 @@ pub enum Atom {
 }
 
 // Str
-impl From<String> for Atom
-{
+impl From<String> for Atom {
     fn from(s: String) -> Atom {
         Atom::Str(s)
     }
