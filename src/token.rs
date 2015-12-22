@@ -53,35 +53,26 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                     None
                 }
 
-                '+' | '-' => {
-                    // TODO
-                    None
-                }
-
-                '0'...'9' => {
-                    // Int, Float
-
-                    let (basis, rest) = scan(s, char::is_numeric);
-                    match rest.slice_shift_char() {
-                        Some(('.', mantisse)) => {
-                            // integer followed by "." => float
-                            let (mantisse, _) = scan(mantisse, char::is_numeric);
-                            let (full_float, rest) = s.split_at(basis.len() + 1 + mantisse.len());
-
-                            Some((Token::Float(full_float), rest))
-                        }
-                        _ => Some((Token::Int(basis), rest)),
-                    }
-                }
-
                 c if char::is_whitespace(c) => {
                     let (ws, rest) = scan(s, char::is_whitespace);
                     Some((Token::Whitespace(ws), rest))
                 }
 
                 _ => {
-                    // Str
                     let (string, rest) = scan(s, |c| !is_token_delim(c));
+                    assert!(!string.is_empty());
+
+                    if let Ok(i) = string.parse::<u64>() {
+                        return Some((Token::Int(string), rest));
+                    }
+                    if let Ok(i) = string.parse::<i64>() {
+                        return Some((Token::Int(string), rest));
+                    }
+                    if let Ok(i) = string.parse::<f64>() {
+                        return Some((Token::Float(string), rest));
+                    }
+
+                    // Str
                     Some((Token::Str(string), rest))
                 }
             }
@@ -158,7 +149,8 @@ fn test_token() {
 
     assert_eq!(Some((Token::Int("12345"), "")), next_token("12345"));
     assert_eq!(Some((Token::Int("12345"), " ")), next_token("12345 "));
-    assert_eq!(Some((Token::Int("12345"), "+")), next_token("12345+"));
+    // assert_eq!(Some((Token::Int("12345"), "+")), next_token("12345+"));
+    assert_eq!(Some((Token::Int("12345"), " +")), next_token("12345 +"));
     assert_eq!(Some((Token::Float("12345.123"), "")),
                next_token("12345.123"));
     assert_eq!(Some((Token::Float("12345.123"), "(")),

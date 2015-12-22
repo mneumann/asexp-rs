@@ -1,5 +1,6 @@
 use std::fmt;
 use super::atom::Atom;
+use super::parser::Parser;
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {
@@ -12,6 +13,15 @@ pub enum Expr {
                        * { key val ... }
                        * Map(Vec<(Atom, Atom)>),
                        * */
+}
+
+impl Expr {
+    pub fn parse(s: &str) -> Expr {
+        let mut p = Parser::new(s);
+        let expr = p.parse_expr();
+        assert!(p.at_end());
+        expr
+    }
 }
 
 impl<T> From<T> for Expr where T: Into<Atom>
@@ -113,4 +123,10 @@ fn test_from() {
     assert_eq!(Expr::Atom(Atom::Float(123.45)), Expr::from(123.45));
     assert_eq!(Expr::Tuple(vec![Expr::Atom(Atom::Float(123.45))]),
                Expr::from((123.45,)));
+}
+
+#[test]
+fn test_parse() {
+    assert_eq!(Expr::from(("abc", 123u64, ("-", 123.43, 11.0))),
+               Expr::parse("(abc 123 (- 123.43 11.0))"));
 }
