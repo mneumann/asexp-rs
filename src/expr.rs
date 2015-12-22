@@ -22,7 +22,7 @@ impl<T> From<T> for Expr where T: Into<Atom>
 }
 
 impl From<()> for Expr {
-    fn from(e: ()) -> Expr {
+    fn from(_e: ()) -> Expr {
         Expr::Tuple(vec![])
     }
 }

@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Token<'a> {
     Error,
     Whitespace(&'a str),
@@ -95,7 +95,7 @@ pub struct Tokenizer<'a> {
 }
 
 impl<'a> Tokenizer<'a> {
-    fn new(s: &'a str, ignore_ws: bool) -> Tokenizer<'a> {
+    pub fn new(s: &'a str, ignore_ws: bool) -> Tokenizer<'a> {
         Tokenizer {
             current: s,
             ignore_ws: ignore_ws,
