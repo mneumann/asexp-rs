@@ -14,6 +14,57 @@ pub enum Expr {
                        * */
 }
 
+impl<T> From<T> for Expr where T: Into<Atom>
+{
+    fn from(t: T) -> Expr {
+        Expr::Atom(t.into())
+    }
+}
+
+impl From<()> for Expr {
+    fn from(e: ()) -> Expr {
+        Expr::Tuple(vec![])
+    }
+}
+
+impl<A> From<(A,)> for Expr where A: Into<Expr>
+{
+    fn from(e: (A,)) -> Expr {
+        Expr::Tuple(vec![e.0.into()])
+    }
+}
+
+impl<A, B> From<(A, B)> for Expr
+    where A: Into<Expr>,
+          B: Into<Expr>
+{
+    fn from(e: (A, B)) -> Expr {
+        Expr::Tuple(vec![e.0.into(), e.1.into()])
+    }
+}
+
+impl<A, B, C> From<(A, B, C)> for Expr
+    where A: Into<Expr>,
+          B: Into<Expr>,
+          C: Into<Expr>
+{
+    fn from(e: (A, B, C)) -> Expr {
+        Expr::Tuple(vec![e.0.into(), e.1.into(), e.2.into()])
+    }
+}
+
+impl<A, B, C, D> From<(A, B, C, D)> for Expr
+    where A: Into<Expr>,
+          B: Into<Expr>,
+          C: Into<Expr>,
+          D: Into<Expr>
+{
+    fn from(e: (A, B, C, D)) -> Expr {
+        Expr::Tuple(vec![e.0.into(), e.1.into(), e.2.into(), e.3.into()])
+    }
+}
+
+
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
@@ -51,4 +102,15 @@ fn test_display() {
                                          Expr::Atom(Atom::Str("abc".to_string()))
                                          ])])));
 
+}
+
+#[test]
+fn test_from() {
+    assert_eq!(Expr::Atom(Atom::UInt(123)), Expr::from(123u64));
+    assert_eq!(Expr::Atom(Atom::SInt(123)), Expr::from(123i64));
+    assert_eq!(Expr::Atom(Atom::Str("test".to_string())),
+               Expr::from("test"));
+    assert_eq!(Expr::Atom(Atom::Float(123.45)), Expr::from(123.45));
+    assert_eq!(Expr::Tuple(vec![Expr::Atom(Atom::Float(123.45))]),
+               Expr::from((123.45,)));
 }

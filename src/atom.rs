@@ -24,6 +24,12 @@ impl From<String> for Atom {
     }
 }
 
+impl<'a> From<&'a str> for Atom {
+    fn from(s: &'a str) -> Atom {
+        Atom::Str(s.to_string())
+    }
+}
+
 // Uint
 impl From<usize> for Atom {
     fn from(u: usize) -> Atom {
