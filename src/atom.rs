@@ -1,3 +1,7 @@
+use std::fmt;
+use std::borrow::Cow;
+use super::token::is_token_delim;
+
 #[derive(Debug, PartialEq)]
 pub enum Atom {
     // String
@@ -92,4 +96,66 @@ impl From<f32> for Atom {
     fn from(f: f32) -> Atom {
         Atom::Float(f.into())
     }
+}
+
+
+fn is_num_string(s: &str) -> bool {
+    match s.slice_shift_char() {
+        None => false,
+        Some((c, rest)) => {
+            if char::is_numeric(c) {
+                true
+            } else if c == '-' || c == '+' {
+                match rest.slice_shift_char() {
+                    Some((c, _)) if char::is_numeric(c) => true,
+                    _ => false,
+                }
+            } else {
+                false
+            }
+        }
+    }
+}
+
+fn quote(s: &str) -> Cow<str> {
+    if s.is_empty() {
+        Cow::Borrowed("\"\"")
+    } else if is_num_string(s) || s.contains(is_token_delim) {
+        let mut r: String = "\"".to_string();
+        r.push_str(&s.replace("\\", "\\\\").replace("\"", "\\\""));
+        r.push_str("\"");
+        Cow::Owned(r)
+    } else {
+        Cow::Borrowed(s)
+    }
+}
+
+impl fmt::Display for Atom {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            Atom::Str(ref s) => write!(f, "{}", quote(s)),
+            Atom::UInt(u) => write!(f, "{}", u),
+            Atom::SInt(s) => write!(f, "{}", s),
+            Atom::Float(n) => write!(f, "{}", n),
+        }
+    }
+}
+
+#[test]
+fn test_display() {
+    assert_eq!("12345", &format!("{}", Atom::UInt(12345)));
+    assert_eq!("12345", &format!("{}", Atom::SInt(12345)));
+    assert_eq!("-12345", &format!("{}", Atom::SInt(-12345)));
+    assert_eq!("-12345.5", &format!("{}", Atom::Float(-12345.5)));
+    assert_eq!("abc", &format!("{}", Atom::Str("abc".to_string())));
+    assert_eq!("\"(\"", &format!("{}", Atom::Str("(".to_string())));
+    assert_eq!("\"\\\"\"", &format!("{}", Atom::Str("\"".to_string())));
+    assert_eq!("\"123\"", &format!("{}", Atom::Str("123".to_string())));
+    assert_eq!("\"123abc\"",
+               &format!("{}", Atom::Str("123abc".to_string())));
+    assert_eq!("\"+123\"", &format!("{}", Atom::Str("+123".to_string())));
+    assert_eq!("+", &format!("{}", Atom::Str("+".to_string())));
+    assert_eq!("-", &format!("{}", Atom::Str("-".to_string())));
+    assert_eq!("-b", &format!("{}", Atom::Str("-b".to_string())));
+    assert_eq!("abc123", &format!("{}", Atom::Str("abc123".to_string())));
 }
