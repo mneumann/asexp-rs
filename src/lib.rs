@@ -1,24 +1,10 @@
 #![feature(str_char)]
 
+pub mod atom;
+
 use std::char;
+pub use atom::Atom;
 
-#[derive(Debug, PartialEq)]
-enum Atom {
-    // Unquoted string
-    Str(String),
-
-    // Quoted string
-    QStr(String),
-
-    // Unsigned 64-bit integer
-    UInt(u64),
-
-    // Signed 64-bit integer
-    SInt(i64),
-
-    // 64-bit floating point number
-    Float(f64),
-}
 
 #[derive(Debug, PartialEq)]
 enum Expr {
