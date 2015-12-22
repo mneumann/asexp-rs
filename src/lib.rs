@@ -1,25 +1,11 @@
 #![feature(str_char)]
 
 pub mod atom;
+pub mod expr;
 mod token;
 
-use std::char;
 pub use atom::Atom;
-
-
-#[derive(Debug, PartialEq)]
-enum Expr {
-    Atom(Atom),
-
-    // ( ... )
-    Tuple(Vec<Atom>),
-
-    // [ ... ]
-    Array(Vec<Atom>),
-
-    // { key val ... }
-    Map(Vec<(Atom, Atom)>),
-}
+pub use expr::Expr;
 
 #[derive(Debug, PartialEq)]
 enum ParseError {
