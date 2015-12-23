@@ -176,8 +176,9 @@ pub fn prettyprint<W: fmt::Write>(sexp: &Sexp,
     use std::cmp;
 
     if newline {
+        try!(write!(f, "\n"));
         for _ in 0..cmp::min(4, indent) {
-            try!(write!(f, "\n{:>4}", ""));
+            try!(write!(f, "{:>4}", ""));
         }
     }
 
