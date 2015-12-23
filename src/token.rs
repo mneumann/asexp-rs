@@ -3,6 +3,13 @@ pub enum TokenError {
     // If a token not a valid number
     // For example "+0a" starts as a number, but contains invalid characters.
     InvalidNumber,
+
+    // missing terminating quote "
+    MissingQuoteEnd,
+
+    InvalidUnquotedString,
+
+    InvalidEscape,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -11,7 +18,7 @@ pub enum Token<'a> {
     Whitespace(&'a str),
 
     Str(&'a str),
-    QStr(&'a str),
+    QStr(String),
 
     OpenBracket,
     CloseBracket,
@@ -40,6 +47,10 @@ pub fn is_token_delim(c: char) -> bool {
     c.is_whitespace() || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}'
 }
 
+fn is_valid_unquoted_string(s: &str) -> bool {
+    !(s.contains('\\') || s.contains('"'))
+}
+
 // TODO ; comment
 fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
     match s.slice_shift_char() {
@@ -56,8 +67,49 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                 '}' => Some((Token::CloseCurly, s2)),
 
                 '"' => {
-                    // TODO: QStr
-                    None
+                    let mut rest = s2;
+                    let mut unquoted_string = String::new();
+
+                    loop {
+                        match rest.slice_shift_char() {
+                            None => {
+                                // Error. No terminating quoting character found
+                                return Some((Token::Error((rest, TokenError::MissingQuoteEnd)), s));
+                            }
+                            Some((ch, rem)) => {
+                                match ch {
+                                    '"' => {
+                                        rest = rem;
+                                        // found good string
+                                        break;
+                                    }
+                                    '\\' => {
+                                        // next character is escaped
+                                        rest = rem;
+                                        match rest.slice_shift_char() {
+                                            Some(('\\', r)) => {
+                                                rest = r;
+                                                unquoted_string.push('\\');
+                                            }
+                                            Some(('"', r)) => {
+                                                rest = r;
+                                                unquoted_string.push('"');
+                                            }
+                                            _ => {
+                                                return Some((Token::Error((rest, TokenError::InvalidEscape)), s));
+                                            }
+                                        }
+                                    }
+                                    _ => {
+                                        rest = rem;
+                                        unquoted_string.push(ch);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Some((Token::QStr(unquoted_string), rest))
                 }
 
                 c if char::is_whitespace(c) => {
@@ -89,8 +141,12 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                         _ => {
                             // If it is followed by any other character (or none) it is a valid
                             // string token.
-                            // XXX: Check for invalid characters in string.
-                            Some((Token::Str(string), rest))
+                            if is_valid_unquoted_string(string) {
+                                Some((Token::Str(string), rest))
+                            } else {
+                                Some((Token::Error((string, TokenError::InvalidUnquotedString)),
+                                      rest))
+                            }
                         }
                     }
                 }
@@ -117,8 +173,12 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                     let (string, rest) = scan(s, |ch| !is_token_delim(ch));
                     assert!(string.len() > 0);
 
-                    // Str
-                    Some((Token::Str(string), rest))
+                    if is_valid_unquoted_string(string) {
+                        Some((Token::Str(string), rest))
+                    } else {
+                        Some((Token::Error((string, TokenError::InvalidUnquotedString)),
+                              rest))
+                    }
                 }
             }
         }
@@ -206,4 +266,29 @@ fn test_token() {
     assert_eq!(Some((Token::Float(12345.123), "")), next_token("12345.123"));
     assert_eq!(Some((Token::Float(12345.123), "(")),
                next_token("12345.123("));
+
+    assert_eq!(Some((Token::Error(("abc\\", TokenError::InvalidUnquotedString)),
+                     " test")),
+               next_token("abc\\ test"));
+    assert_eq!(Some((Token::Error(("abc\"", TokenError::InvalidUnquotedString)),
+                     " test")),
+               next_token("abc\" test"));
+
+
+    assert_eq!(Some((Token::QStr("".to_string()), "(")),
+               next_token("\"\"("));
+    assert_eq!(Some((Token::QStr("abc".to_string()), "(")),
+               next_token("\"abc\"("));
+    assert_eq!(Some((Token::QStr("a\"b".to_string()), "(")),
+               next_token("\"a\\\"b\"("));
+    assert_eq!(Some((Token::QStr("a\\b".to_string()), "(")),
+               next_token("\"a\\\\b\"("));
+
+    assert_eq!(Some((Token::Error(("", TokenError::MissingQuoteEnd)), "\"abc ")),
+               next_token("\"abc "));
+
+    assert_eq!(Some((Token::Error(("n ", TokenError::InvalidEscape)), "\"abc\\n ")),
+               next_token("\"abc\\n "));
+
+
 }

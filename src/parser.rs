@@ -29,6 +29,7 @@ impl<'a> Parser<'a> {
             Some(tok) => {
                 match tok {
                     Token::Str(s) => Ok(Expr::from(s)),
+                    Token::QStr(s) => Ok(Expr::from(s)),
                     Token::UInt(u) => Ok(Expr::from(Atom::UInt(u))),
                     Token::SInt(s) => Ok(Expr::from(Atom::SInt(s))),
                     Token::Float(s) => Ok(Expr::from(Atom::Float(s))),
@@ -58,6 +59,14 @@ fn test_parse_expr() {
 
     let mut p = Parser::new("123");
     assert_eq!(Ok(Expr::from(123usize)), p.parse_expr());
+    assert_eq!(true, p.at_end());
+
+    let mut p = Parser::new("+123");
+    assert_eq!(Ok(Expr::from(123isize)), p.parse_expr());
+    assert_eq!(true, p.at_end());
+
+    let mut p = Parser::new("\"hal\\\"lo\"");
+    assert_eq!(Ok(Expr::from("hal\"lo")), p.parse_expr());
     assert_eq!(true, p.at_end());
 
     let mut p = Parser::new("(123)");
