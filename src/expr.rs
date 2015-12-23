@@ -78,6 +78,12 @@ impl<A, B, C, D> From<(A, B, C, D)> for Expr
     }
 }
 
+impl<A> From<Vec<A>> for Expr where A: Into<Expr>
+{
+    fn from(arr: Vec<A>) -> Expr {
+        Expr::Array(arr.into_iter().map(|e| e.into()).collect())
+    }
+}
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -152,6 +158,9 @@ fn test_from() {
     assert_eq!(Expr::Atom(Atom::Float(123.45)), Expr::from(123.45));
     assert_eq!(Expr::Tuple(vec![Expr::Atom(Atom::Float(123.45))]),
                Expr::from((123.45,)));
+    assert_eq!(Expr::Array(vec![Expr::Atom(Atom::Float(123.45))]),
+               Expr::from(vec![123.45]));
+
 }
 
 #[test]
