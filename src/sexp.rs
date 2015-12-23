@@ -168,11 +168,11 @@ impl<A> From<Vec<A>> for Sexp where A: Into<Sexp>
     }
 }
 
-pub fn prettyprint(sexp: &Sexp,
-                   f: &mut fmt::Formatter,
-                   indent: usize,
-                   newline: bool)
-                   -> Result<(), fmt::Error> {
+pub fn prettyprint<W: fmt::Write>(sexp: &Sexp,
+                                  f: &mut W,
+                                  indent: usize,
+                                  newline: bool)
+                                  -> Result<(), fmt::Error> {
     use std::cmp;
 
     if newline {
