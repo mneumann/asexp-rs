@@ -1,6 +1,6 @@
 extern crate asexp;
 
-use asexp::Expr;
+use asexp::Sexp;
 use std::fs::File;
 use std::io::Read;
 
@@ -13,7 +13,7 @@ fn read_file(fname: &str) -> String {
 #[test]
 fn node() {
     let s = read_file("tests/node.as");
-    let expr = Expr::parse(&s).unwrap();
+    let expr = Sexp::parse(&s).unwrap();
     let d = format!("{}\n", expr);
     assert_eq!(s, d);
 }
