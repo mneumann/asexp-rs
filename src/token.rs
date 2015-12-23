@@ -16,6 +16,7 @@ pub enum TokenError {
 pub enum Token<'a> {
     Error((&'a str, TokenError)),
     Whitespace(&'a str),
+    Comment(&'a str),
 
     Str(&'a str),
     QStr(String),
@@ -44,7 +45,8 @@ fn scan<F: Fn(char) -> bool>(s: &str, cond: F) -> (&str, &str) {
 
 #[inline]
 pub fn is_token_delim(c: char) -> bool {
-    c.is_whitespace() || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}'
+    c.is_whitespace() || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' ||
+    c == ';'
 }
 
 fn is_valid_unquoted_string(s: &str) -> bool {
@@ -65,6 +67,12 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
 
                 '{' => Some((Token::OpenCurly, s2)),
                 '}' => Some((Token::CloseCurly, s2)),
+
+                ';' => {
+                    // comment
+                    let (comment, rest) = scan(s2, |ch| ch != '\n');
+                    Some((Token::Comment(comment), rest))
+                }
 
                 '"' => {
                     let mut rest = s2;
@@ -208,8 +216,9 @@ impl<'a> Iterator for Tokenizer<'a> {
                 Some((tok, rest)) => {
                     self.current = rest;
                     if self.ignore_ws {
-                        if let Token::Whitespace(_) = tok {
-                            continue;
+                        match tok {
+                            Token::Whitespace(_) | Token::Comment(_) => continue,
+                            _ => {}
                         }
                     }
                     return Some(tok);
@@ -272,6 +281,21 @@ fn test_tokenizer_whitespace() {
                     Token::OpenBrace,
                     Token::Str("abc"),
                     Token::Whitespace(" "),
+                    Token::UInt(123),
+                    Token::CloseBrace],
+               tokens);
+}
+
+
+#[test]
+fn test_tokenizer_comment() {
+    let t = Tokenizer::new(" (abc;comment\n 123)", false);
+    let tokens: Vec<_> = t.into_iter().collect();
+    assert_eq!(vec![Token::Whitespace(" "),
+                    Token::OpenBrace,
+                    Token::Str("abc"),
+                    Token::Comment("comment"),
+                    Token::Whitespace("\n "),
                     Token::UInt(123),
                     Token::CloseBrace],
                tokens);
