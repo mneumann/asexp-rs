@@ -68,6 +68,23 @@ impl Expr {
         }
     }
 
+    pub fn get_uint_vec(&self) -> Option<Vec<u64>> {
+        match self {
+            &Expr::Array(ref ary) => {
+                let mut a = Vec::new();
+                for elm in ary.iter() {
+                    if let Some(u) = elm.get_uint() {
+                        a.push(u);
+                    } else {
+                        return None;
+                    }
+                }
+                Some(a)
+            }
+            _ => None,
+        }
+    }
+
     pub fn parse_iter<'a, I>(mut iter: I) -> Result<Expr, ()>
         where I: Iterator<Item = Token<'a>>
     {
