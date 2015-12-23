@@ -68,12 +68,14 @@ impl Expr {
         }
     }
 
-    pub fn get_uint_vec(&self) -> Option<Vec<u64>> {
+    pub fn get_vec<'a, F, R>(&'a self, f: F) -> Option<Vec<R>>
+        where F: Fn(&'a Expr) -> Option<R>
+    {
         match self {
             &Expr::Array(ref ary) => {
                 let mut a = Vec::new();
                 for elm in ary.iter() {
-                    if let Some(u) = elm.get_uint() {
+                    if let Some(u) = f(elm) {
                         a.push(u);
                     } else {
                         return None;
@@ -83,6 +85,10 @@ impl Expr {
             }
             _ => None,
         }
+    }
+
+    pub fn get_uint_vec(&self) -> Option<Vec<u64>> {
+        self.get_vec(|elm| elm.get_uint())
     }
 
     pub fn parse_iter<'a, I>(mut iter: I) -> Result<Expr, ()>
