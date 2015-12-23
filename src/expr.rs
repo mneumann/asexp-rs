@@ -40,6 +40,34 @@ impl Expr {
         }
     }
 
+    pub fn get_uint(&self) -> Option<u64> {
+        match self {
+            &Expr::Atom(Atom::UInt(u)) => Some(u),
+            _ => None,
+        }
+    }
+
+    pub fn get_int(&self) -> Option<i64> {
+        match self {
+            &Expr::Atom(Atom::SInt(s)) => Some(s),
+            _ => None,
+        }
+    }
+
+    pub fn get_float(&self) -> Option<f64> {
+        match self {
+            &Expr::Atom(Atom::Float(f)) => Some(f),
+            _ => None,
+        }
+    }
+
+    pub fn get_str(&self) -> Option<&str> {
+        match self {
+            &Expr::Atom(Atom::Str(ref s)) => Some(s),
+            _ => None,
+        }
+    }
+
     pub fn parse_iter<'a, I>(mut iter: I) -> Result<Expr, ()>
         where I: Iterator<Item = Token<'a>>
     {
