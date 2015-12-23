@@ -168,6 +168,53 @@ impl<A> From<Vec<A>> for Sexp where A: Into<Sexp>
     }
 }
 
+pub fn prettyprint(sexp: &Sexp,
+                   f: &mut fmt::Formatter,
+                   indent: usize,
+                   newline: bool)
+                   -> Result<(), fmt::Error> {
+    use std::cmp;
+
+    if newline {
+        for _ in 0..cmp::min(4, indent) {
+            try!(write!(f, "\n{:>4}", ""));
+        }
+    }
+
+    match *sexp {
+        Sexp::Atom(ref a) => write!(f, "{}", a),
+        Sexp::Tuple(ref t) => {
+            try!(write!(f, "("));
+            for (i, expr) in t.iter().enumerate() {
+                if i > 0 {
+                    try!(write!(f, " "));
+                }
+                try!(prettyprint(expr, f, indent, false));
+            }
+            write!(f, ")")
+        }
+        Sexp::Array(ref t) => {
+            try!(write!(f, "["));
+            for (_, expr) in t.iter().enumerate() {
+                try!(prettyprint(expr, f, indent + 1, true));
+            }
+            write!(f, "\n]")
+        }
+        Sexp::Map(ref t) => {
+            try!(write!(f, "{}", "{"));
+            for (i, expr) in t.iter().enumerate() {
+                if i > 0 {
+                    try!(write!(f, " "));
+                }
+                try!(prettyprint(&expr.0, f, indent, false));
+                try!(write!(f, " "));
+                try!(prettyprint(&expr.1, f, indent, false));
+            }
+            write!(f, "{}", "}")
+        }
+    }
+}
+
 impl fmt::Display for Sexp {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
@@ -208,7 +255,6 @@ impl fmt::Display for Sexp {
                 }
                 write!(f, "{}", "}")
             }
-
         }
     }
 }
