@@ -199,7 +199,7 @@ pub fn prettyprint<W: fmt::Write>(sexp: &Sexp,
             for (_, expr) in t.iter().enumerate() {
                 try!(prettyprint(expr, f, indent + 1, true));
             }
-            write!(f, "\n]")
+            write!(f, "]")
         }
         Sexp::Map(ref t) => {
             try!(write!(f, "{}", "{"));
