@@ -35,25 +35,26 @@ impl<'a> Parser<'a> {
         self.token().is_none()
     }
 
-    // panics if no expression can be parsed.
-    pub fn parse_expr(&mut self) -> Expr {
+    // Returns either the successfully parsed expression, or
+    // the invalid token which was not expected.
+    pub fn parse_expr(&mut self) -> Result<Expr, Token<'a>> {
         let current = self.token().unwrap();
         match current {
             Token::Str(s) => {
                 self.skip();
-                Expr::from(s)
+                Ok(Expr::from(s))
             }
             Token::UInt(u) => {
                 self.skip();
-                Expr::from(Atom::UInt(u))
+                Ok(Expr::from(Atom::UInt(u)))
             }
             Token::SInt(s) => {
                 self.skip();
-                Expr::from(Atom::SInt(s))
+                Ok(Expr::from(Atom::SInt(s)))
             }
             Token::Float(s) => {
                 self.skip();
-                Expr::from(Atom::Float(s))
+                Ok(Expr::from(Atom::Float(s)))
             }
             Token::OpenBrace => {
                 self.skip();
@@ -63,11 +64,14 @@ impl<'a> Parser<'a> {
                         self.skip();
                         break;
                     }
-                    exprs.push(self.parse_expr());
+                    match self.parse_expr() {
+                        Ok(ex) => exprs.push(ex),
+                        Err(tok) => return Err(tok),
+                    }
                 }
-                Expr::Tuple(exprs)
+                Ok(Expr::Tuple(exprs))
             }
-            _ => panic!("invalid token"),
+            tok => Err(tok),
         }
     }
 }
@@ -75,22 +79,22 @@ impl<'a> Parser<'a> {
 #[test]
 fn test_parse_expr() {
     let mut p = Parser::new("123.45");
-    assert_eq!(Expr::from(123.45), p.parse_expr());
+    assert_eq!(Ok(Expr::from(123.45)), p.parse_expr());
     assert_eq!(true, p.at_end());
 
     let mut p = Parser::new("123");
-    assert_eq!(Expr::from(123usize), p.parse_expr());
+    assert_eq!(Ok(Expr::from(123usize)), p.parse_expr());
     assert_eq!(true, p.at_end());
 
     let mut p = Parser::new("(123)");
-    assert_eq!(Expr::from((123usize,)), p.parse_expr());
+    assert_eq!(Ok(Expr::from((123usize,))), p.parse_expr());
     assert_eq!(true, p.at_end());
 
     let mut p = Parser::new("(test 123)   ");
-    assert_eq!(Expr::from(("test", 123usize)), p.parse_expr());
+    assert_eq!(Ok(Expr::from(("test", 123usize))), p.parse_expr());
     assert_eq!(true, p.at_end());
 
     let mut p = Parser::new("(test 123)   123");
-    assert_eq!(Expr::from(("test", 123usize)), p.parse_expr());
+    assert_eq!(Ok(Expr::from(("test", 123usize))), p.parse_expr());
     assert_eq!(false, p.at_end());
 }

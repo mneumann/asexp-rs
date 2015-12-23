@@ -16,11 +16,14 @@ pub enum Expr {
 }
 
 impl Expr {
-    pub fn parse(s: &str) -> Expr {
+    pub fn parse(s: &str) -> Result<Expr, ()> {
         let mut p = Parser::new(s);
-        let expr = p.parse_expr();
-        assert!(p.at_end());
-        expr
+        if let Ok(expr) = p.parse_expr() {
+            if p.at_end() {
+                return Ok(expr);
+            }
+        }
+        Err(())
     }
 }
 
@@ -127,6 +130,6 @@ fn test_from() {
 
 #[test]
 fn test_parse() {
-    assert_eq!(Expr::from(("abc", 123u64, ("-", 123.43, 11.0))),
+    assert_eq!(Ok(Expr::from(("abc", 123u64, ("-", 123.43, 11.0)))),
                Expr::parse("(abc 123 (- 123.43 11.0))"));
 }
