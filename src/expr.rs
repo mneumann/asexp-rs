@@ -7,12 +7,13 @@ pub enum Expr {
     Atom(Atom),
 
     // ( ... )
-    Tuple(Vec<Expr>), /* [ ... ]
-                       * Array(Vec<Atom>),
-                       *
-                       * { key val ... }
-                       * Map(Vec<(Atom, Atom)>),
-                       * */
+    Tuple(Vec<Expr>),
+
+    // [ ... ]
+    Array(Vec<Expr>),
+
+    // { key val ... }
+    Map(Vec<(Expr, Expr)>),
 }
 
 impl Expr {
@@ -94,6 +95,31 @@ impl fmt::Display for Expr {
                 }
                 write!(f, ")")
             }
+            Expr::Array(ref t) => {
+                try!(write!(f, "["));
+                for (i, expr) in t.iter().enumerate() {
+                    let space = if i > 0 {
+                        " "
+                    } else {
+                        ""
+                    };
+                    try!(write!(f, "{}{}", space, expr));
+                }
+                write!(f, "]")
+            }
+            Expr::Map(ref t) => {
+                try!(write!(f, "{}", "{"));
+                for (i, expr) in t.iter().enumerate() {
+                    let space = if i > 0 {
+                        " "
+                    } else {
+                        ""
+                    };
+                    try!(write!(f, "{}{} {}", space, expr.0, expr.1));
+                }
+                write!(f, "{}", "}")
+            }
+
         }
     }
 }

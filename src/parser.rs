@@ -44,6 +44,35 @@ impl<'a> Parser<'a> {
                         }
                         Ok(Expr::Tuple(exprs))
                     }
+                    Token::OpenBracket => {
+                        let mut exprs = vec![];
+                        loop {
+                            match self.parse_expr() {
+                                Ok(ex) => exprs.push(ex),
+                                Err(ParseError::UnexpectedToken(Token::CloseBracket)) => break,
+                                Err(err) => return Err(err),
+                            }
+                        }
+                        Ok(Expr::Array(exprs))
+                    }
+                    Token::OpenCurly => {
+                        let mut exprs = vec![];
+                        loop {
+                            match self.parse_expr() {
+                                Ok(key) => {
+                                    match self.parse_expr() {
+                                        Ok(value) => {
+                                            exprs.push((key, value));
+                                        }
+                                        Err(err) => return Err(err),
+                                    }
+                                }
+                                Err(ParseError::UnexpectedToken(Token::CloseCurly)) => break,
+                                Err(err) => return Err(err),
+                            }
+                        }
+                        Ok(Expr::Map(exprs))
+                    }
                     tok => Err(ParseError::UnexpectedToken(tok)),
                 }
             }
@@ -88,6 +117,21 @@ fn test_parse_expr() {
     assert_eq!(Err(ParseError::UnexpectedEnd), p.parse_expr());
 
     let mut p = Parser::new("(abc  }  ");
+    assert_eq!(Err(ParseError::UnexpectedToken(Token::CloseCurly)),
+               p.parse_expr());
+
+    let mut p = Parser::new("[1 2 3]");
+    assert_eq!(Ok(Expr::Array(vec![Expr::from(1usize), Expr::from(2usize), Expr::from(3usize)])),
+               p.parse_expr());
+    assert_eq!(true, p.at_end());
+
+    let mut p = Parser::new("{a 1 b 2}");
+    assert_eq!(Ok(Expr::Map(vec![(Expr::from("a"), Expr::from(1usize)),
+                                 (Expr::from("b"), Expr::from(2usize))])),
+               p.parse_expr());
+    assert_eq!(true, p.at_end());
+
+    let mut p = Parser::new("{a 1 b }");
     assert_eq!(Err(ParseError::UnexpectedToken(Token::CloseCurly)),
                p.parse_expr());
 }
