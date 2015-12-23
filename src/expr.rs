@@ -2,6 +2,7 @@ use std::fmt;
 use super::atom::Atom;
 use super::parser;
 use super::token::{Token, Tokenizer, CurlyAroundTokenizer};
+use std::collections::BTreeMap;
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {
@@ -18,6 +19,27 @@ pub enum Expr {
 }
 
 impl Expr {
+    /// Converts a Expr::Map into a BTreeMap<String, Expr> if possible.
+    pub fn into_map(self) -> Result<BTreeMap<String, Expr>, &'static str> {
+        match self {
+            Expr::Map(pairs) => {
+                let mut map = BTreeMap::new();
+                for (key, val) in pairs {
+                    match key {
+                        Expr::Atom(Atom::Str(s)) => {
+                            if map.insert(s, val).is_some() {
+                                return Err("duplicate key");
+                            }
+                        }
+                        _ => return Err("key has to be a string"),
+                    }
+                }
+                return Ok(map);
+            }
+            _ => Err("expr is not a Expr::Map"),
+        }
+    }
+
     pub fn parse_iter<'a, I>(mut iter: I) -> Result<Expr, ()>
         where I: Iterator<Item = Token<'a>>
     {
@@ -184,4 +206,18 @@ fn test_parse() {
 #[test]
 fn test_parse_toplevel() {
     assert_eq!(Expr::parse("{a 1 b 2}"), Expr::parse_toplevel("a 1 b 2"));
+}
+
+#[test]
+fn test_map() {
+    let map = Expr::parse("{a 1 b 2}").unwrap().into_map().unwrap();
+    assert_eq!(true, map.contains_key("a"));
+    assert_eq!(true, map.contains_key("b"));
+    assert_eq!(false, map.contains_key("c"));
+
+    assert_eq!(Err("duplicate key"),
+               Expr::parse("{a 1 b 2 a 1}").unwrap().into_map());
+    assert_eq!(Err("key has to be a string"),
+               Expr::parse("{1 1 b 2 a 1}").unwrap().into_map());
+
 }
