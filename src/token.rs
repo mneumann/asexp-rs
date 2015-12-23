@@ -1,6 +1,13 @@
 #[derive(Debug, PartialEq, Copy, Clone)]
+pub enum TokenError {
+    // If a token not a valid number
+    // For example "+0a" starts as a number, but contains invalid characters.
+    InvalidNumber,
+}
+
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Token<'a> {
-    Error,
+    Error((&'a str, TokenError)),
     Whitespace(&'a str),
 
     Str(&'a str),
@@ -13,8 +20,9 @@ pub enum Token<'a> {
     OpenCurly,
     CloseCurly,
 
-    Int(&'a str),
-    Float(&'a str),
+    UInt(u64),
+    SInt(i64),
+    Float(f64),
 }
 
 #[inline]
@@ -58,19 +66,57 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                     Some((Token::Whitespace(ws), rest))
                 }
 
-                _ => {
-                    let (string, rest) = scan(s, |c| !is_token_delim(c));
-                    assert!(!string.is_empty());
+                '+' | '-' => {
+                    let (string, rest) = scan(s, |ch| !is_token_delim(ch));
+                    assert!(string.len() > 0);
+
+                    // parse +|- always as a signed integer first.
+                    // this is the way to distinguish a positive signed
+                    // integer from a positive unsigned (+1 == SInt, while 1 == UInt).
+
+                    // if it is followed by a digit, this is should be a number.
+                    match s2.slice_shift_char() {
+                        Some((ch, _)) if char::is_digit(ch, 10) => {
+                            // +|- followed by [0-9]. This must be a number!
+
+                            if let Ok(i) = string.parse::<i64>() {
+                                Some((Token::SInt(i), rest))
+                            } else if let Ok(i) = string.parse::<f64>() {
+                                Some((Token::Float(i), rest))
+                            } else {
+                                Some((Token::Error((string, TokenError::InvalidNumber)), rest))
+                            }
+                        }
+                        _ => {
+                            // If it is followed by any other character (or none) it is a valid
+                            // string token.
+                            // XXX: Check for invalid characters in string.
+                            Some((Token::Str(string), rest))
+                        }
+                    }
+                }
+
+                '0'...'9' => {
+                    // this should be either a unsigned integer of a floating point number. If not,
+                    // it's invalid.
+                    let (string, rest) = scan(s, |ch| !is_token_delim(ch));
+                    assert!(string.len() > 0);
 
                     if let Ok(i) = string.parse::<u64>() {
-                        return Some((Token::Int(string), rest));
+                        Some((Token::UInt(i), rest))
+                    } else if let Ok(i) = string.parse::<f64>() {
+                        Some((Token::Float(i), rest))
+                    } else {
+                        Some((Token::Error((string, TokenError::InvalidNumber)), rest))
                     }
-                    if let Ok(i) = string.parse::<i64>() {
-                        return Some((Token::Int(string), rest));
-                    }
-                    if let Ok(i) = string.parse::<f64>() {
-                        return Some((Token::Float(string), rest));
-                    }
+                }
+
+                _ => {
+                    // this neither starts with '+' or '-' or 'digit'. this is definitively a
+                    // string.
+
+                    let (string, rest) = scan(s, |ch| !is_token_delim(ch));
+                    assert!(string.len() > 0);
 
                     // Str
                     Some((Token::Str(string), rest))
@@ -126,7 +172,7 @@ fn test_tokenizer_whitespace() {
                     Token::OpenBrace,
                     Token::Str("abc"),
                     Token::Whitespace(" "),
-                    Token::Int("123"),
+                    Token::UInt(123),
                     Token::CloseBrace],
                tokens);
 }
@@ -135,7 +181,7 @@ fn test_tokenizer_whitespace() {
 fn test_tokenizer_no_whitespace() {
     let t = Tokenizer::new(" (abc 123)", true);
     let tokens: Vec<_> = t.into_iter().collect();
-    assert_eq!(vec![Token::OpenBrace, Token::Str("abc"), Token::Int("123"), Token::CloseBrace],
+    assert_eq!(vec![Token::OpenBrace, Token::Str("abc"), Token::UInt(123), Token::CloseBrace],
                tokens);
 }
 
@@ -147,12 +193,18 @@ fn test_token() {
 
     assert_eq!(Some((Token::OpenBrace, ")")), next_token("()"));
 
-    assert_eq!(Some((Token::Int("12345"), "")), next_token("12345"));
-    assert_eq!(Some((Token::Int("12345"), " ")), next_token("12345 "));
-    // assert_eq!(Some((Token::Int("12345"), "+")), next_token("12345+"));
-    assert_eq!(Some((Token::Int("12345"), " +")), next_token("12345 +"));
-    assert_eq!(Some((Token::Float("12345.123"), "")),
-               next_token("12345.123"));
-    assert_eq!(Some((Token::Float("12345.123"), "(")),
+    assert_eq!(Some((Token::UInt(12345), "")), next_token("12345"));
+    assert_eq!(Some((Token::UInt(12345), " ")), next_token("12345 "));
+    assert_eq!(Some((Token::SInt(12345), " ")), next_token("+12345 "));
+    assert_eq!(Some((Token::SInt(-12345), " ")), next_token("-12345 "));
+    assert_eq!(Some((Token::Str("-a"), " ")), next_token("-a "));
+    assert_eq!(Some((Token::Str("+a"), " ")), next_token("+a "));
+    assert_eq!(Some((Token::Str("+a"), "(")), next_token("+a("));
+
+    assert_eq!(Some((Token::Error(("12345+", TokenError::InvalidNumber)), "")),
+               next_token("12345+"));
+    assert_eq!(Some((Token::UInt(12345), " +")), next_token("12345 +"));
+    assert_eq!(Some((Token::Float(12345.123), "")), next_token("12345.123"));
+    assert_eq!(Some((Token::Float(12345.123), "(")),
                next_token("12345.123("));
 }

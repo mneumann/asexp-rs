@@ -141,7 +141,13 @@ impl fmt::Display for Atom {
         match *self {
             Atom::Str(ref s) => write!(f, "{}", quote(s)),
             Atom::UInt(u) => write!(f, "{}", u),
-            Atom::SInt(s) => write!(f, "{}", s),
+            Atom::SInt(s) => {
+                if s >= 0 {
+                    write!(f, "+{}", s)
+                } else {
+                    write!(f, "{}", s)
+                }
+            }
             Atom::Float(n) => write!(f, "{}", n),
         }
     }
@@ -150,7 +156,7 @@ impl fmt::Display for Atom {
 #[test]
 fn test_display() {
     assert_eq!("12345", &format!("{}", Atom::UInt(12345)));
-    assert_eq!("12345", &format!("{}", Atom::SInt(12345)));
+    assert_eq!("+12345", &format!("{}", Atom::SInt(12345)));
     assert_eq!("-12345", &format!("{}", Atom::SInt(-12345)));
     assert_eq!("-12345.5", &format!("{}", Atom::Float(-12345.5)));
     assert_eq!("abc", &format!("{}", Atom::Str("abc".to_string())));

@@ -1,4 +1,5 @@
 use super::Expr;
+use super::Atom;
 use super::token::{Token, Tokenizer};
 
 pub struct Parser<'a> {
@@ -42,15 +43,17 @@ impl<'a> Parser<'a> {
                 self.skip();
                 Expr::from(s)
             }
-            Token::Int(s) => {
+            Token::UInt(u) => {
                 self.skip();
-                let u: u64 = s.parse().unwrap();
-                Expr::from(u)
+                Expr::from(Atom::UInt(u))
+            }
+            Token::SInt(s) => {
+                self.skip();
+                Expr::from(Atom::SInt(s))
             }
             Token::Float(s) => {
                 self.skip();
-                let f: f64 = s.parse().unwrap();
-                Expr::from(f)
+                Expr::from(Atom::Float(s))
             }
             Token::OpenBrace => {
                 self.skip();
