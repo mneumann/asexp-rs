@@ -5,7 +5,7 @@ pub enum TokenError {
     InvalidNumber,
 }
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token<'a> {
     Error((&'a str, TokenError)),
     Whitespace(&'a str),
