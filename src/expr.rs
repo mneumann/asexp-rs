@@ -144,6 +144,8 @@ impl fmt::Display for Expr {
 #[test]
 fn test_display() {
     assert_eq!("12345", &format!("{}", Expr::Atom(Atom::UInt(12345))));
+    assert_eq!("1.0", &format!("{}", Expr::Atom(Atom::Float(1.0))));
+
     assert_eq!("(12345)",
                &format!("{}", Expr::Tuple(vec![Expr::Atom(Atom::UInt(12345))])));
     assert_eq!("(12345 abc)",

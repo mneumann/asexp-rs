@@ -181,7 +181,7 @@ impl fmt::Display for Atom {
                     write!(f, "{}", s)
                 }
             }
-            Atom::Float(n) => write!(f, "{}", n),
+            Atom::Float(n) => write!(f, "{:.1}", n),
         }
     }
 }
