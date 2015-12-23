@@ -1,6 +1,7 @@
 use std::fmt;
 use super::atom::Atom;
-use super::parser::Parser;
+use super::parser;
+use super::token::{Token, Tokenizer, CurlyAroundTokenizer};
 
 #[derive(Debug, PartialEq)]
 pub enum Expr {
@@ -17,14 +18,23 @@ pub enum Expr {
 }
 
 impl Expr {
-    pub fn parse(s: &str) -> Result<Expr, ()> {
-        let mut p = Parser::new(s);
-        if let Ok(expr) = p.parse_expr() {
-            if p.at_end() {
+    pub fn parse_iter<'a, I>(mut iter: I) -> Result<Expr, ()>
+        where I: Iterator<Item = Token<'a>>
+    {
+        if let Ok(expr) = parser::parse_expr(&mut iter) {
+            if parser::at_end(&mut iter) {
                 return Ok(expr);
             }
         }
         Err(())
+    }
+
+    pub fn parse(s: &str) -> Result<Expr, ()> {
+        Expr::parse_iter(Tokenizer::new(s, true))
+    }
+
+    pub fn parse_toplevel(s: &str) -> Result<Expr, ()> {
+        Expr::parse_iter(CurlyAroundTokenizer::new(Tokenizer::new(s, true)))
     }
 }
 
@@ -167,4 +177,9 @@ fn test_from() {
 fn test_parse() {
     assert_eq!(Ok(Expr::from(("abc", 123u64, ("-", 123.43, 11.0)))),
                Expr::parse("(abc 123 (- 123.43 11.0))"));
+}
+
+#[test]
+fn test_parse_toplevel() {
+    assert_eq!(Expr::parse("{a 1 b 2}"), Expr::parse_toplevel("a 1 b 2"));
 }

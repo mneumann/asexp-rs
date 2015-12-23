@@ -222,6 +222,47 @@ impl<'a> Iterator for Tokenizer<'a> {
     }
 }
 
+enum State {
+    Begin,
+    Inner,
+    End,
+}
+
+pub struct CurlyAroundTokenizer<'a> {
+    inner: Tokenizer<'a>,
+    state: State,
+}
+
+impl<'a> CurlyAroundTokenizer<'a> {
+    pub fn new(inner: Tokenizer<'a>) -> CurlyAroundTokenizer<'a> {
+        CurlyAroundTokenizer {
+            inner: inner,
+            state: State::Begin,
+        }
+    }
+}
+
+impl<'a> Iterator for CurlyAroundTokenizer<'a> {
+    type Item = Token<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.state {
+            State::Begin => {
+                self.state = State::Inner;
+                Some(Token::OpenCurly)
+            }
+            State::Inner => {
+                if let Some(tok) = self.inner.next() {
+                    return Some(tok);
+                }
+                self.state = State::End;
+                Some(Token::CloseCurly)
+            }
+            State::End => None,
+        }
+    }
+}
+
 
 #[test]
 fn test_tokenizer_whitespace() {
@@ -233,6 +274,19 @@ fn test_tokenizer_whitespace() {
                     Token::Whitespace(" "),
                     Token::UInt(123),
                     Token::CloseBrace],
+               tokens);
+}
+
+#[test]
+fn test_tokenizer_curly_around() {
+    let t = CurlyAroundTokenizer::new(Tokenizer::new(" (abc 123)", true));
+    let tokens: Vec<_> = t.into_iter().collect();
+    assert_eq!(vec![Token::OpenCurly,
+                    Token::OpenBrace,
+                    Token::Str("abc"),
+                    Token::UInt(123),
+                    Token::CloseBrace,
+                    Token::CloseCurly],
                tokens);
 }
 
