@@ -37,8 +37,7 @@ fn scan<F: Fn(char) -> bool>(s: &str, cond: F) -> (&str, &str) {
 
 #[inline]
 pub fn is_token_delim(c: char) -> bool {
-    c.is_whitespace() || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' ||
-    c == '"'
+    c.is_whitespace() || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}'
 }
 
 // TODO ; comment

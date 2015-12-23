@@ -109,11 +109,11 @@ fn is_num_string(s: &str) -> bool {
     match s.slice_shift_char() {
         None => false,
         Some((c, rest)) => {
-            if char::is_numeric(c) {
+            if char::is_digit(c, 10) {
                 true
             } else if c == '-' || c == '+' {
                 match rest.slice_shift_char() {
-                    Some((c, _)) if char::is_numeric(c) => true,
+                    Some((c, _)) if char::is_digit(c, 10) => true,
                     _ => false,
                 }
             } else {
@@ -123,10 +123,36 @@ fn is_num_string(s: &str) -> bool {
     }
 }
 
+#[test]
+fn test_is_num_string() {
+    assert_eq!(true, is_num_string("0"));
+    assert_eq!(true, is_num_string("0123"));
+    assert_eq!(true, is_num_string("0a"));
+    assert_eq!(true, is_num_string("0a11"));
+    assert_eq!(true, is_num_string("1"));
+    assert_eq!(true, is_num_string("1.123"));
+    assert_eq!(true, is_num_string("+1.123"));
+    assert_eq!(true, is_num_string("-1.123"));
+    assert_eq!(true, is_num_string("-1"));
+    assert_eq!(true, is_num_string("+1"));
+    assert_eq!(true, is_num_string("+1abc"));
+    assert_eq!(true, is_num_string("-1abc"));
+
+    assert_eq!(false, is_num_string("-a"));
+    assert_eq!(false, is_num_string("+a"));
+    assert_eq!(false, is_num_string("+"));
+    assert_eq!(false, is_num_string("-"));
+    assert_eq!(false, is_num_string("a"));
+    assert_eq!(false, is_num_string("abc"));
+    assert_eq!(false, is_num_string("a0123"));
+    assert_eq!(false, is_num_string("a+0123"));
+}
+
 fn quote(s: &str) -> Cow<str> {
     if s.is_empty() {
         Cow::Borrowed("\"\"")
-    } else if is_num_string(s) || s.contains(is_token_delim) {
+    } else if is_num_string(s) || s.contains(is_token_delim) || s.contains("\"") || s.contains("\\") {
+        // XXX: Replace \n and others
         let mut r: String = "\"".to_string();
         r.push_str(&s.replace("\\", "\\\\").replace("\"", "\\\""));
         r.push_str("\"");
@@ -134,6 +160,13 @@ fn quote(s: &str) -> Cow<str> {
     } else {
         Cow::Borrowed(s)
     }
+}
+
+#[test]
+fn test_quote() {
+    assert_eq!("\"\"", quote(""));
+    assert_eq!("abc", quote("abc"));
+    assert_eq!("\"abc\\\\def\"", quote("abc\\def"));
 }
 
 impl fmt::Display for Atom {
