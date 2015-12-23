@@ -2,7 +2,7 @@ use std::fmt;
 use std::borrow::Cow;
 use super::token::is_token_delim;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Atom {
     // String
     Str(String),

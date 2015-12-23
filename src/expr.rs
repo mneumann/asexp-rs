@@ -4,7 +4,7 @@ use super::parser;
 use super::token::{Token, Tokenizer, CurlyAroundTokenizer};
 use std::collections::BTreeMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Atom(Atom),
 
