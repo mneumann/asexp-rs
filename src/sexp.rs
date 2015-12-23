@@ -19,6 +19,22 @@ pub enum Sexp {
 }
 
 impl Sexp {
+    pub fn is_atom(&self) -> bool {
+        match self {
+            &Sexp::Atom(..) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_flat(&self) -> bool {
+        match self {
+            &Sexp::Atom(..) => true,
+            &Sexp::Tuple(ref vec) => vec.iter().all(Sexp::is_atom),
+            &Sexp::Array(ref vec) => vec.iter().all(Sexp::is_atom),
+            &Sexp::Map(ref vec) => vec.iter().all(|e| e.0.is_atom() && e.1.is_atom()),
+        }
+    }
+
     /// Converts a Sexp::Map into a BTreeMap<String, Sexp> if possible.
     pub fn into_map(self) -> Result<BTreeMap<String, Sexp>, &'static str> {
         match self {
@@ -195,11 +211,15 @@ pub fn prettyprint<W: fmt::Write>(sexp: &Sexp,
             write!(f, ")")
         }
         Sexp::Array(ref t) => {
-            try!(write!(f, "["));
-            for (_, expr) in t.iter().enumerate() {
-                try!(prettyprint(expr, f, indent + 1, true));
+            if sexp.is_flat() && t.len() < 5 {
+                write!(f, "{}", sexp)
+            } else {
+                try!(write!(f, "["));
+                for (_, expr) in t.iter().enumerate() {
+                    try!(prettyprint(expr, f, indent + 1, true));
+                }
+                write!(f, "]")
             }
-            write!(f, "]")
         }
         Sexp::Map(ref t) => {
             try!(write!(f, "{}", "{"));
