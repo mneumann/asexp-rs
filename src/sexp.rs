@@ -193,7 +193,7 @@ pub fn prettyprint<W: fmt::Write>(sexp: &Sexp,
 
     if newline {
         try!(write!(f, "\n"));
-        for _ in 0..cmp::min(4, indent) {
+        for _ in 0..cmp::min(8, indent) {
             try!(write!(f, "{:>4}", ""));
         }
     }
@@ -223,13 +223,14 @@ pub fn prettyprint<W: fmt::Write>(sexp: &Sexp,
         }
         Sexp::Map(ref t) => {
             try!(write!(f, "{}", "{"));
-            for (i, expr) in t.iter().enumerate() {
-                if i > 0 {
-                    try!(write!(f, " "));
-                }
-                try!(prettyprint(&expr.0, f, indent, false));
+            for (_, expr) in t.iter().enumerate() {
+                try!(prettyprint(&expr.0, f, indent + 1, true));
                 try!(write!(f, " "));
-                try!(prettyprint(&expr.1, f, indent, false));
+                try!(prettyprint(&expr.1, f, indent + 1, false));
+            }
+            try!(write!(f, "\n"));
+            for _ in 0..cmp::min(8, indent) {
+                try!(write!(f, "{:>4}", ""));
             }
             write!(f, "{}", "}")
         }
