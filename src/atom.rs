@@ -181,7 +181,14 @@ impl fmt::Display for Atom {
                     write!(f, "{}", s)
                 }
             }
-            Atom::Float(n) => write!(f, "{:.1}", n),
+            Atom::Float(n) => {
+                let s = format!("{}", n);
+                if s.contains('.') {
+                    write!(f, "{}", s)
+                } else {
+                   write!(f, "{}.0", s)
+                }
+            }
         }
     }
 }
@@ -192,6 +199,8 @@ fn test_display() {
     assert_eq!("+12345", &format!("{}", Atom::SInt(12345)));
     assert_eq!("-12345", &format!("{}", Atom::SInt(-12345)));
     assert_eq!("-12345.5", &format!("{}", Atom::Float(-12345.5)));
+    assert_eq!("-12345.5", &format!("{}", Atom::Float(-12345.500)));
+    assert_eq!("-12345.55", &format!("{}", Atom::Float(-12345.55)));
     assert_eq!("abc", &format!("{}", Atom::Str("abc".to_string())));
     assert_eq!("\"(\"", &format!("{}", Atom::Str("(".to_string())));
     assert_eq!("\"\\\"\"", &format!("{}", Atom::Str("\"".to_string())));
