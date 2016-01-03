@@ -186,7 +186,7 @@ impl fmt::Display for Atom {
                 if s.contains('.') {
                     write!(f, "{}", s)
                 } else {
-                   write!(f, "{}.0", s)
+                    write!(f, "{}.0", s)
                 }
             }
         }
