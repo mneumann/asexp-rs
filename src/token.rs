@@ -21,12 +21,12 @@ pub enum Token<'a> {
     Str(&'a str),
     QStr(String),
 
-    OpenBracket,  // '['
+    OpenBracket, // '['
     CloseBracket, // ']'
-    OpenParens,   // '('
-    CloseParens,  // ')'
-    OpenCurly,    // '{'
-    CloseCurly,   // '}'
+    OpenParens, // '('
+    CloseParens, // ')'
+    OpenCurly, // '{'
+    CloseCurly, // '}'
 
     UInt(u64),
     SInt(i64),
@@ -205,6 +205,10 @@ impl<'a> Tokenizer<'a> {
             ignore_ws: ignore_ws,
         }
     }
+
+    pub fn with_curly_around(self) -> CurlyAroundTokenizer<'a> {
+        CurlyAroundTokenizer::new(self)
+    }
 }
 
 impl<'a> Iterator for Tokenizer<'a> {
@@ -271,7 +275,6 @@ impl<'a> Iterator for CurlyAroundTokenizer<'a> {
         }
     }
 }
-
 
 #[test]
 fn test_tokenizer_whitespace() {

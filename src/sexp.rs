@@ -1,7 +1,7 @@
 use std::fmt;
 use super::atom::Atom;
 use super::parser;
-use super::token::{Token, Tokenizer, CurlyAroundTokenizer};
+use super::token::{Token, Tokenizer};
 use std::collections::BTreeMap;
 use std::io;
 
@@ -124,7 +124,7 @@ impl Sexp {
     }
 
     pub fn parse_toplevel(s: &str) -> Result<Sexp, ()> {
-        Sexp::parse_iter(CurlyAroundTokenizer::new(Tokenizer::new(s, true)))
+        Sexp::parse_iter(Tokenizer::new(s, true).with_curly_around())
     }
 }
 
