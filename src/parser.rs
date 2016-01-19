@@ -25,12 +25,12 @@ pub fn parse_sexp<'a, I>(tokenstream: &mut I) -> Result<Sexp, ParseError<'a>>
                 Token::UInt(u) => Ok(Sexp::from(Atom::UInt(u))),
                 Token::SInt(s) => Ok(Sexp::from(Atom::SInt(s))),
                 Token::Float(s) => Ok(Sexp::from(Atom::Float(s))),
-                Token::OpenBrace => {
+                Token::OpenParens => {
                     let mut exprs = vec![];
                     loop {
                         match parse_sexp(tokenstream) {
                             Ok(ex) => exprs.push(ex),
-                            Err(ParseError::UnexpectedToken(Token::CloseBrace)) => break,
+                            Err(ParseError::UnexpectedToken(Token::CloseParens)) => break,
                             Err(err) => return Err(err),
                         }
                     }

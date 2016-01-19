@@ -21,12 +21,12 @@ pub enum Token<'a> {
     Str(&'a str),
     QStr(String),
 
-    OpenBracket,
-    CloseBracket,
-    OpenBrace,
-    CloseBrace,
-    OpenCurly,
-    CloseCurly,
+    OpenBracket,  // '['
+    CloseBracket, // ']'
+    OpenParens,   // '('
+    CloseParens,  // ')'
+    OpenCurly,    // '{'
+    CloseCurly,   // '}'
 
     UInt(u64),
     SInt(i64),
@@ -59,8 +59,8 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
         None => None,
         Some((c, s2)) => {
             match c {
-                '(' => Some((Token::OpenBrace, s2)),
-                ')' => Some((Token::CloseBrace, s2)),
+                '(' => Some((Token::OpenParens, s2)),
+                ')' => Some((Token::CloseParens, s2)),
 
                 '[' => Some((Token::OpenBracket, s2)),
                 ']' => Some((Token::CloseBracket, s2)),
@@ -278,11 +278,11 @@ fn test_tokenizer_whitespace() {
     let t = Tokenizer::new(" (abc 123)", false);
     let tokens: Vec<_> = t.into_iter().collect();
     assert_eq!(vec![Token::Whitespace(" "),
-                    Token::OpenBrace,
+                    Token::OpenParens,
                     Token::Str("abc"),
                     Token::Whitespace(" "),
                     Token::UInt(123),
-                    Token::CloseBrace],
+                    Token::CloseParens],
                tokens);
 }
 
@@ -292,12 +292,12 @@ fn test_tokenizer_comment() {
     let t = Tokenizer::new(" (abc;comment\n 123)", false);
     let tokens: Vec<_> = t.into_iter().collect();
     assert_eq!(vec![Token::Whitespace(" "),
-                    Token::OpenBrace,
+                    Token::OpenParens,
                     Token::Str("abc"),
                     Token::Comment("comment"),
                     Token::Whitespace("\n "),
                     Token::UInt(123),
-                    Token::CloseBrace],
+                    Token::CloseParens],
                tokens);
 }
 
@@ -306,10 +306,10 @@ fn test_tokenizer_curly_around() {
     let t = CurlyAroundTokenizer::new(Tokenizer::new(" (abc 123)", true));
     let tokens: Vec<_> = t.into_iter().collect();
     assert_eq!(vec![Token::OpenCurly,
-                    Token::OpenBrace,
+                    Token::OpenParens,
                     Token::Str("abc"),
                     Token::UInt(123),
-                    Token::CloseBrace,
+                    Token::CloseParens,
                     Token::CloseCurly],
                tokens);
 }
@@ -318,7 +318,7 @@ fn test_tokenizer_curly_around() {
 fn test_tokenizer_no_whitespace() {
     let t = Tokenizer::new(" (abc 123)", true);
     let tokens: Vec<_> = t.into_iter().collect();
-    assert_eq!(vec![Token::OpenBrace, Token::Str("abc"), Token::UInt(123), Token::CloseBrace],
+    assert_eq!(vec![Token::OpenParens, Token::Str("abc"), Token::UInt(123), Token::CloseParens],
                tokens);
 }
 
@@ -328,7 +328,7 @@ fn test_token() {
     assert_eq!(Some((Token::Str("abc"), "")), next_token("abc"));
     assert_eq!(Some((Token::Str("abc"), "(")), next_token("abc("));
 
-    assert_eq!(Some((Token::OpenBrace, ")")), next_token("()"));
+    assert_eq!(Some((Token::OpenParens, ")")), next_token("()"));
 
     assert_eq!(Some((Token::UInt(12345), "")), next_token("12345"));
     assert_eq!(Some((Token::UInt(12345), " ")), next_token("12345 "));
