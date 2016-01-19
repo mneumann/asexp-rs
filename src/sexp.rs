@@ -3,6 +3,7 @@ use super::atom::Atom;
 use super::parser;
 use super::token::{Token, Tokenizer, CurlyAroundTokenizer};
 use std::collections::BTreeMap;
+use std::io;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Sexp {
@@ -184,11 +185,17 @@ impl<A> From<Vec<A>> for Sexp where A: Into<Sexp>
     }
 }
 
-pub fn prettyprint<W: fmt::Write>(sexp: &Sexp,
-                                  f: &mut W,
-                                  indent: usize,
-                                  newline: bool)
-                                  -> Result<(), fmt::Error> {
+pub fn pp(sexp: &Sexp) -> String {
+    let mut buf = Vec::new();
+    let _ = prettyprint(sexp, &mut buf, 0, false).unwrap();
+    String::from_utf8(buf).unwrap()
+}
+
+pub fn prettyprint<W: io::Write>(sexp: &Sexp,
+                                 f: &mut W,
+                                 indent: usize,
+                                 newline: bool)
+                                 -> Result<(), io::Error> {
     use std::cmp;
 
     if newline {
