@@ -91,12 +91,6 @@ fn test_parse_sexp() {
     assert_eq!(Ok(Sexp::from(123isize)), parse_sexp(&mut p));
     assert_eq!(true, at_end(&mut p));
 
-
-
-
-
-
-
     let mut p = Tokenizer::new("\"hal\\\"lo\"", true);
     assert_eq!(Ok(Sexp::from("hal\"lo")), parse_sexp(&mut p));
     assert_eq!(true, at_end(&mut p));
