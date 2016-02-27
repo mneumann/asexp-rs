@@ -46,14 +46,13 @@ fn scan<F: Fn(char) -> bool>(s: &str, cond: F) -> (&str, &str) {
 #[inline]
 pub fn is_token_delim(c: char) -> bool {
     c.is_whitespace() || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' ||
-    c == ';'
+    c == '#'
 }
 
 fn is_valid_unquoted_string(s: &str) -> bool {
     !(s.contains('\\') || s.contains('"'))
 }
 
-// TODO ; comment
 fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
     match s.slice_shift_char() {
         None => None,
@@ -68,7 +67,7 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                 '{' => Some((Token::OpenCurly, s2)),
                 '}' => Some((Token::CloseCurly, s2)),
 
-                ';' => {
+                '#' => {
                     // comment
                     let (comment, rest) = scan(s2, |ch| ch != '\n');
                     Some((Token::Comment(comment), rest))
@@ -292,7 +291,7 @@ fn test_tokenizer_whitespace() {
 
 #[test]
 fn test_tokenizer_comment() {
-    let t = Tokenizer::new(" (abc;comment\n 123)", false);
+    let t = Tokenizer::new(" (abc#comment\n 123)", false);
     let tokens: Vec<_> = t.into_iter().collect();
     assert_eq!(vec![Token::Whitespace(" "),
                     Token::OpenParens,
