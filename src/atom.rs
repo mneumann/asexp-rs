@@ -106,14 +106,15 @@ impl From<f32> for Atom {
 
 
 fn is_num_string(s: &str) -> bool {
-    match s.slice_shift_char() {
+    let mut chars = s.chars();
+    match chars.next() {
         None => false,
-        Some((c, rest)) => {
+        Some(c) => {
             if char::is_digit(c, 10) {
                 true
             } else if c == '-' || c == '+' {
-                match rest.slice_shift_char() {
-                    Some((c, _)) if char::is_digit(c, 10) => true,
+                match chars.next() {
+                    Some(c) if char::is_digit(c, 10) => true,
                     _ => false,
                 }
             } else {

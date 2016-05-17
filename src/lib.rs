@@ -1,5 +1,3 @@
-#![feature(str_char)]
-
 pub mod atom;
 pub mod sexp;
 pub mod parser;
