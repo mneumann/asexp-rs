@@ -12,4 +12,4 @@ include = ["src/**/*.rs", "examples/*.rs", "tests/*", "Cargo.toml", "README.md",
 
 [dev-dependencies]
 
-grabinput = "^0.1"
+grabinput = "^0.2"
