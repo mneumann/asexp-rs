@@ -199,21 +199,21 @@ pub fn prettyprint<W: io::Write>(sexp: &Sexp,
     use std::cmp;
 
     if newline {
-        try!(write!(f, "\n"));
+        write!(f, "\n")?;
         for _ in 0..cmp::min(8, indent) {
-            try!(write!(f, "{:>4}", ""));
+            write!(f, "{:>4}", "")?;
         }
     }
 
     match *sexp {
         Sexp::Atom(ref a) => write!(f, "{}", a),
         Sexp::Tuple(ref t) => {
-            try!(write!(f, "("));
+            write!(f, "(")?;
             for (i, expr) in t.iter().enumerate() {
                 if i > 0 {
-                    try!(write!(f, " "));
+                    write!(f, " ")?;
                 }
-                try!(prettyprint(expr, f, indent, false));
+                prettyprint(expr, f, indent, false)?;
             }
             write!(f, ")")
         }
@@ -221,23 +221,23 @@ pub fn prettyprint<W: io::Write>(sexp: &Sexp,
             if sexp.is_flat() && t.len() < 5 {
                 write!(f, "{}", sexp)
             } else {
-                try!(write!(f, "["));
+                write!(f, "[")?;
                 for (_, expr) in t.iter().enumerate() {
-                    try!(prettyprint(expr, f, indent + 1, true));
+                    prettyprint(expr, f, indent + 1, true)?;
                 }
                 write!(f, "]")
             }
         }
         Sexp::Map(ref t) => {
-            try!(write!(f, "{}", "{"));
+            write!(f, "{}", "{")?;
             for (_, expr) in t.iter().enumerate() {
-                try!(prettyprint(&expr.0, f, indent + 1, true));
-                try!(write!(f, " "));
-                try!(prettyprint(&expr.1, f, indent + 1, false));
+                prettyprint(&expr.0, f, indent + 1, true)?;
+                write!(f, " ")?;
+                prettyprint(&expr.1, f, indent + 1, false)?;
             }
-            try!(write!(f, "\n"));
+            write!(f, "\n")?;
             for _ in 0..cmp::min(8, indent) {
-                try!(write!(f, "{:>4}", ""));
+                write!(f, "{:>4}", "")?;
             }
             write!(f, "{}", "}")
         }
@@ -249,38 +249,38 @@ impl fmt::Display for Sexp {
         match *self {
             Sexp::Atom(ref a) => write!(f, "{}", a),
             Sexp::Tuple(ref t) => {
-                try!(write!(f, "("));
+                write!(f, "(")?;
                 for (i, expr) in t.iter().enumerate() {
                     let space = if i > 0 {
                         " "
                     } else {
                         ""
                     };
-                    try!(write!(f, "{}{}", space, expr));
+                    write!(f, "{}{}", space, expr)?;
                 }
                 write!(f, ")")
             }
             Sexp::Array(ref t) => {
-                try!(write!(f, "["));
+                write!(f, "[")?;
                 for (i, expr) in t.iter().enumerate() {
                     let space = if i > 0 {
                         " "
                     } else {
                         ""
                     };
-                    try!(write!(f, "{}{}", space, expr));
+                    write!(f, "{}{}", space, expr)?;
                 }
                 write!(f, "]")
             }
             Sexp::Map(ref t) => {
-                try!(write!(f, "{}", "{"));
+                write!(f, "{}", "{")?;
                 for (i, expr) in t.iter().enumerate() {
                     let space = if i > 0 {
                         " "
                     } else {
                         ""
                     };
-                    try!(write!(f, "{}{} {}", space, expr.0, expr.1));
+                    write!(f, "{}{} {}", space, expr.0, expr.1)?;
                 }
                 write!(f, "{}", "}")
             }

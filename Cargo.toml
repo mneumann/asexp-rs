@@ -3,6 +3,7 @@ name = "asexp"
 version = "0.3.1"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
 
+edition = "2018"
 license = "MIT"
 repository = "https://github.com/mneumann/asexp-rs"
 description = "Advanced S-expression-like format suitable for configuration and serialization"
