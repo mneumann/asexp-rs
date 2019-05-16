@@ -1,6 +1,6 @@
 [package]
 name = "asexp"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
 
 edition = "2018"
@@ -9,7 +9,7 @@ repository = "https://github.com/mneumann/asexp-rs"
 description = "Advanced S-expression-like format suitable for configuration and serialization"
 keywords = ["sexp", "file-format", "serialization", "configuration"]
 
-include = ["src/**/*.rs", "examples/*.rs", "tests/*", "Cargo.toml", "README.md", "LICENSE"]
+include = ["src/**/*.rs", "examples/*.rs", "tests/*.rs", "tests/*.as", "Cargo.toml", "README.md", "LICENSE"]
 
 [dev-dependencies]
 
