@@ -21,12 +21,12 @@ pub enum Token<'a> {
     Str(&'a str),
     QStr(String),
 
-    OpenBracket, // '['
+    OpenBracket,  // '['
     CloseBracket, // ']'
-    OpenParens, // '('
-    CloseParens, // ')'
-    OpenCurly, // '{'
-    CloseCurly, // '}'
+    OpenParens,   // '('
+    CloseParens,  // ')'
+    OpenCurly,    // '{'
+    CloseCurly,   // '}'
 
     UInt(u64),
     SInt(i64),
@@ -42,11 +42,16 @@ fn scan<F: Fn(char) -> bool>(s: &str, cond: F) -> (&str, &str) {
     }
 }
 
-
 #[inline]
 pub fn is_token_delim(c: char) -> bool {
-    c.is_whitespace() || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' ||
-    c == '#'
+    c.is_whitespace()
+        || c == '('
+        || c == ')'
+        || c == '['
+        || c == ']'
+        || c == '{'
+        || c == '}'
+        || c == '#'
 }
 
 fn is_valid_unquoted_string(s: &str) -> bool {
@@ -81,7 +86,10 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                         match chars.next() {
                             None => {
                                 // Error. No terminating quoting character found
-                                return Some((Token::Error((chars.as_str(), TokenError::MissingQuoteEnd)), s));
+                                return Some((
+                                    Token::Error((chars.as_str(), TokenError::MissingQuoteEnd)),
+                                    s,
+                                ));
                             }
                             Some(ch) => {
                                 match ch {
@@ -99,7 +107,13 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                                                 unquoted_string.push('"');
                                             }
                                             _ => {
-                                                return Some((Token::Error((chars.as_str(), TokenError::InvalidEscape)), s));
+                                                return Some((
+                                                    Token::Error((
+                                                        chars.as_str(),
+                                                        TokenError::InvalidEscape,
+                                                    )),
+                                                    s,
+                                                ));
                                             }
                                         }
                                     }
@@ -146,8 +160,10 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                             if is_valid_unquoted_string(string) {
                                 Some((Token::Str(string), rest))
                             } else {
-                                Some((Token::Error((string, TokenError::InvalidUnquotedString)),
-                                      rest))
+                                Some((
+                                    Token::Error((string, TokenError::InvalidUnquotedString)),
+                                    rest,
+                                ))
                             }
                         }
                     }
@@ -178,8 +194,10 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                     if is_valid_unquoted_string(string) {
                         Some((Token::Str(string), rest))
                     } else {
-                        Some((Token::Error((string, TokenError::InvalidUnquotedString)),
-                              rest))
+                        Some((
+                            Token::Error((string, TokenError::InvalidUnquotedString)),
+                            rest,
+                        ))
                     }
                 }
             }
@@ -274,49 +292,67 @@ impl<'a> Iterator for CurlyAroundTokenizer<'a> {
 fn test_tokenizer_whitespace() {
     let t = Tokenizer::new(" (abc 123)", false);
     let tokens: Vec<_> = t.into_iter().collect();
-    assert_eq!(vec![Token::Whitespace(" "),
-                    Token::OpenParens,
-                    Token::Str("abc"),
-                    Token::Whitespace(" "),
-                    Token::UInt(123),
-                    Token::CloseParens],
-               tokens);
+    assert_eq!(
+        vec![
+            Token::Whitespace(" "),
+            Token::OpenParens,
+            Token::Str("abc"),
+            Token::Whitespace(" "),
+            Token::UInt(123),
+            Token::CloseParens
+        ],
+        tokens
+    );
 }
-
 
 #[test]
 fn test_tokenizer_comment() {
     let t = Tokenizer::new(" (abc#comment\n 123)", false);
     let tokens: Vec<_> = t.into_iter().collect();
-    assert_eq!(vec![Token::Whitespace(" "),
-                    Token::OpenParens,
-                    Token::Str("abc"),
-                    Token::Comment("comment"),
-                    Token::Whitespace("\n "),
-                    Token::UInt(123),
-                    Token::CloseParens],
-               tokens);
+    assert_eq!(
+        vec![
+            Token::Whitespace(" "),
+            Token::OpenParens,
+            Token::Str("abc"),
+            Token::Comment("comment"),
+            Token::Whitespace("\n "),
+            Token::UInt(123),
+            Token::CloseParens
+        ],
+        tokens
+    );
 }
 
 #[test]
 fn test_tokenizer_curly_around() {
     let t = CurlyAroundTokenizer::new(Tokenizer::new(" (abc 123)", true));
     let tokens: Vec<_> = t.into_iter().collect();
-    assert_eq!(vec![Token::OpenCurly,
-                    Token::OpenParens,
-                    Token::Str("abc"),
-                    Token::UInt(123),
-                    Token::CloseParens,
-                    Token::CloseCurly],
-               tokens);
+    assert_eq!(
+        vec![
+            Token::OpenCurly,
+            Token::OpenParens,
+            Token::Str("abc"),
+            Token::UInt(123),
+            Token::CloseParens,
+            Token::CloseCurly
+        ],
+        tokens
+    );
 }
 
 #[test]
 fn test_tokenizer_no_whitespace() {
     let t = Tokenizer::new(" (abc 123)", true);
     let tokens: Vec<_> = t.into_iter().collect();
-    assert_eq!(vec![Token::OpenParens, Token::Str("abc"), Token::UInt(123), Token::CloseParens],
-               tokens);
+    assert_eq!(
+        vec![
+            Token::OpenParens,
+            Token::Str("abc"),
+            Token::UInt(123),
+            Token::CloseParens
+        ],
+        tokens
+    );
 }
 
 #[test]
@@ -335,36 +371,57 @@ fn test_token() {
     assert_eq!(Some((Token::Str("+a"), " ")), next_token("+a "));
     assert_eq!(Some((Token::Str("+a"), "(")), next_token("+a("));
 
-    assert_eq!(Some((Token::Error(("12345+", TokenError::InvalidNumber)), "")),
-               next_token("12345+"));
+    assert_eq!(
+        Some((Token::Error(("12345+", TokenError::InvalidNumber)), "")),
+        next_token("12345+")
+    );
     assert_eq!(Some((Token::UInt(12345), " +")), next_token("12345 +"));
     assert_eq!(Some((Token::Float(12345.123), "")), next_token("12345.123"));
-    assert_eq!(Some((Token::Float(12345.123), "(")),
-               next_token("12345.123("));
+    assert_eq!(
+        Some((Token::Float(12345.123), "(")),
+        next_token("12345.123(")
+    );
 
-    assert_eq!(Some((Token::Error(("abc\\", TokenError::InvalidUnquotedString)),
-                     " test")),
-               next_token("abc\\ test"));
-    assert_eq!(Some((Token::Error(("abc\"", TokenError::InvalidUnquotedString)),
-                     " test")),
-               next_token("abc\" test"));
+    assert_eq!(
+        Some((
+            Token::Error(("abc\\", TokenError::InvalidUnquotedString)),
+            " test"
+        )),
+        next_token("abc\\ test")
+    );
+    assert_eq!(
+        Some((
+            Token::Error(("abc\"", TokenError::InvalidUnquotedString)),
+            " test"
+        )),
+        next_token("abc\" test")
+    );
 
+    assert_eq!(
+        Some((Token::QStr("".to_string()), "(")),
+        next_token("\"\"(")
+    );
+    assert_eq!(
+        Some((Token::QStr("abc".to_string()), "(")),
+        next_token("\"abc\"(")
+    );
+    assert_eq!(
+        Some((Token::QStr("a\"b".to_string()), "(")),
+        next_token("\"a\\\"b\"(")
+    );
+    assert_eq!(
+        Some((Token::QStr("a\\b".to_string()), "(")),
+        next_token("\"a\\\\b\"(")
+    );
 
-    assert_eq!(Some((Token::QStr("".to_string()), "(")),
-               next_token("\"\"("));
-    assert_eq!(Some((Token::QStr("abc".to_string()), "(")),
-               next_token("\"abc\"("));
-    assert_eq!(Some((Token::QStr("a\"b".to_string()), "(")),
-               next_token("\"a\\\"b\"("));
-    assert_eq!(Some((Token::QStr("a\\b".to_string()), "(")),
-               next_token("\"a\\\\b\"("));
-
-    assert_eq!(Some((Token::Error(("", TokenError::MissingQuoteEnd)), "\"abc ")),
-               next_token("\"abc "));
+    assert_eq!(
+        Some((Token::Error(("", TokenError::MissingQuoteEnd)), "\"abc ")),
+        next_token("\"abc ")
+    );
 
     //assert_eq!(Some((Token::Error(("n ", TokenError::InvalidEscape)), "\"abc\\n ")),
-    assert_eq!(Some((Token::Error((" ", TokenError::InvalidEscape)), "\"abc\\n ")),
-               next_token("\"abc\\n "));
-
-
+    assert_eq!(
+        Some((Token::Error((" ", TokenError::InvalidEscape)), "\"abc\\n ")),
+        next_token("\"abc\\n ")
+    );
 }

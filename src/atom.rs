@@ -1,6 +1,6 @@
-use std::fmt;
-use std::borrow::Cow;
 use super::token::is_token_delim;
+use std::borrow::Cow;
+use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Atom {
@@ -104,7 +104,6 @@ impl From<f32> for Atom {
     }
 }
 
-
 fn is_num_string(s: &str) -> bool {
     let mut chars = s.chars();
     match chars.next() {
@@ -152,7 +151,8 @@ fn test_is_num_string() {
 fn quote(s: &str) -> Cow<str> {
     if s.is_empty() {
         Cow::Borrowed("\"\"")
-    } else if is_num_string(s) || s.contains(is_token_delim) || s.contains("\"") || s.contains("\\") {
+    } else if is_num_string(s) || s.contains(is_token_delim) || s.contains("\"") || s.contains("\\")
+    {
         // XXX: Replace \n and others
         let mut r: String = "\"".to_string();
         r.push_str(&s.replace("\\", "\\\\").replace("\"", "\\\""));
@@ -206,8 +206,10 @@ fn test_display() {
     assert_eq!("\"(\"", &format!("{}", Atom::Str("(".to_string())));
     assert_eq!("\"\\\"\"", &format!("{}", Atom::Str("\"".to_string())));
     assert_eq!("\"123\"", &format!("{}", Atom::Str("123".to_string())));
-    assert_eq!("\"123abc\"",
-               &format!("{}", Atom::Str("123abc".to_string())));
+    assert_eq!(
+        "\"123abc\"",
+        &format!("{}", Atom::Str("123abc".to_string()))
+    );
     assert_eq!("\"+123\"", &format!("{}", Atom::Str("+123".to_string())));
     assert_eq!("+", &format!("{}", Atom::Str("+".to_string())));
     assert_eq!("-", &format!("{}", Atom::Str("-".to_string())));
