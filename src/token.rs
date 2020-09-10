@@ -169,7 +169,7 @@ fn next_token<'a>(s: &'a str) -> Option<(Token<'a>, &'a str)> {
                     }
                 }
 
-                '0'...'9' => {
+                '0'..='9' => {
                     // this should be either a unsigned integer of a floating point number. If not,
                     // it's invalid.
                     let (string, rest) = scan(s, |ch| !is_token_delim(ch));
